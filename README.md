@@ -35,8 +35,8 @@ If your AI agent configures MCP clients on your behalf, point it at [`llms-insta
 - **Read-only.** Every tool is annotated `readOnlyHint: true`. The assistant cannot create, modify or delete anything in Spaceti, including bookings.
 - **OAuth 2.1.** You sign in with your existing Spaceti account. Authorization code flow with PKCE against `https://passport.spaceti.com`; the MCP server is an OAuth protected resource and publishes its metadata at `https://intelligence.spaceti.ai/.well-known/oauth-protected-resource`. Clients register dynamically (RFC 7591); there is no shared secret and no API key.
 - **Permission parity.** Access is limited to the tenants and buildings your Spaceti user is already entitled to, enforced server-side on every request. The integration never exposes more than the same user sees in the Spaceti Dashboard. Your organisation's administrator can enable or disable the integration per organisation, role or user.
-- **What the data contains.** Analytics, insight events and sensor readings are space-level and time-based, not tied to named people. Booking records carry an internal user identifier; the booker's name, email address and meeting title are included only where your organisation has enabled non-anonymised booking analytics. No individual precise-location data is available.
-- **Scopes.** `mcp:tools`, `mcp:resources`.
+- **What the data contains.** Analytics, insight events and sensor readings are space-level and time-based, not tied to named people. Booking records identify the person who made the booking or organised the meeting (name, email address, meeting title, online-meeting flag) unless your organisation has opted out of identified booking analytics, in which case they carry an internal identifier only. No individual precise-location data is available.
+- **Scopes.** `mcp:tools`.
 
 How data is handled, retained and disconnected: [Spaceti Privacy Policy, section "AI Assistant Integrations"](https://spaceti.com/mobile/privacy-policy). Certifications and current security documentation: <https://trust.spaceti.com/>.
 
@@ -52,7 +52,7 @@ A Spaceti workspace with an **Intelligence Pro** license, the integration enable
 | Help center | <https://help.spaceti.com/en/> |
 | Trust & security | <https://trust.spaceti.com/> |
 | Privacy policy | <https://spaceti.com/mobile/privacy-policy> |
-| Terms of service | <https://www.spaceti.com/mobile/terms-of-service> |
+| Terms of use | <https://spaceti.com/mobile/terms-of-service> |
 | Website | <https://www.spaceti.com> |
 | Support | <mailto:support@spaceti.com> |
 

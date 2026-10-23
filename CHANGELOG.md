@@ -6,6 +6,25 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ser
 
 ## [Unreleased]
 
+## [1.3.0] — 2026-10-20
+
+### Added
+
+- `get_bookings` records now carry the booker's or meeting organiser's name and email address, the meeting title and online-meeting details, unless the organisation has opted out of identified booking analytics (opted-out organisations receive an internal identifier only). Calendar organisers who are not Spaceti users are included.
+- `get_bookings` responses report the time filters that were applied.
+
+### Changed
+
+- `get_info` basic documentation describes the booking identity and meeting fields.
+
+## [1.2.0] — 2026-10-09
+
+### Changed
+
+- **`get_info` replaces `select_tenant` and the three resources** (`spaceti://basic-info`, `spaceti://tenants/{tenant}`, `spaceti://user-info`). The server is now stateless: every tenant-scoped tool takes a `tenant` argument, and `get_info` provides the interface documentation (`type: "basic"`), the accessible tenant list (`type: "tenants"`) and a tenant's building catalog (`type: "tenant"`). Scope `mcp:resources` is no longer used.
+- Building catalog entries expose `timeZone` and working hours. Analytics results are documented as building-local time; `get_sensor_events` stays UTC.
+- Tagged release process; production deploys from tagged builds.
+
 ## [1.1.0] — 2026-09-25
 
 First public release of the **Spaceti Intelligence** MCP server.
@@ -19,5 +38,3 @@ First public release of the **Spaceti Intelligence** MCP server.
 - Discovery documents at `/.well-known/mcp/server-card.json` and `/.well-known/glama.json`.
 - Field-level input validation on dates and time windows; size-capped responses with narrowing hints.
 - This documentation repository.
-
-
