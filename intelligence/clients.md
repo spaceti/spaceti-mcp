@@ -130,9 +130,9 @@ Not yet available. This section will be filled in when the Gemini Enterprise int
 
 ## Verifying it worked
 
-Ask your assistant to list the available Spaceti tools. You should see seven: `select_tenant`, `get_dataset`, `get_insights`, `get_bookings`, `get_sensor_events`, `get_spaces`, `get_space_groups`.
+Ask your assistant to list the available Spaceti tools. You should see seven: `get_info`, `get_dataset`, `get_insights`, `get_bookings`, `get_sensor_events`, `get_spaces`, `get_space_groups`.
 
-Then try: *"Using Spaceti, what was the average occupancy of our office last month?"* The assistant should call `select_tenant` first, then `get_dataset`.
+Then try: *"Using Spaceti, what was the average occupancy of our office last month?"* The assistant should call `get_info` first (tenants, then the building catalog), then `get_dataset`.
 
 ## If it does not
 
@@ -141,7 +141,7 @@ Then try: *"Using Spaceti, what was the average occupancy of our office last mon
 | Browser never opens / stuck "connecting" | Client configured for stdio, or URL typo | Confirm the URL is exactly `https://intelligence.spaceti.ai/mcp`, no trailing slash |
 | Sign-in works, but no tenants available | Account not entitled, or no Intelligence Pro license | Contact <mailto:support@spaceti.com> — not a configuration problem |
 | Tools appear but every call returns 401 | Token expired | Reconnect / re-authenticate in the client's MCP settings |
-| A record tool says "Select a tenant first" | No `select_tenant` call yet | Ask the assistant to call `select_tenant`, or pass `tenant` in the tool input |
-| Assistant guesses filter IDs and gets nothing | It skipped `spaceti://basic-info` | Ask it to read the Spaceti basic-info resource first |
+| A tool error says the tenant is missing or not accessible | `tenant` not passed | Ask the assistant to call `get_info` with `type: "tenants"` and pass `tenant` on each call |
+| Assistant guesses filter IDs and gets nothing | It skipped `get_info` | Ask it to call `get_info` with `type: "tenant"` and use the returned IDs |
 
 Still stuck: <mailto:support@spaceti.com>.

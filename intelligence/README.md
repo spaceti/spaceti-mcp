@@ -8,9 +8,9 @@ Read-only workplace analytics, insights, bookings and sensor data from Spaceti, 
 | Transport | Streamable HTTP (single endpoint, no legacy SSE) |
 | Authentication | OAuth 2.1, authorization code + PKCE, dynamic client registration |
 | Authorization server | `https://passport.spaceti.com` |
-| Scopes | `mcp:tools`, `mcp:resources` |
+| Scopes | `mcp:tools` |
 | Registry identifier | `ai.spaceti/intelligence` |
-| Server name / version | `spaceti-intelligence` / `1.1.0` |
+| Server name / version | `spaceti-intelligence` / `1.3.0` |
 
 **Setup instructions per client: [`clients.md`](clients.md).**
 **Machine-readable descriptor: [`server.json`](server.json).**
@@ -20,31 +20,21 @@ Read-only workplace analytics, insights, bookings and sensor data from Spaceti, 
 - A Spaceti workspace with an **Intelligence Pro** license and the AI assistant integration enabled for your organisation.
 - A Spaceti user account with access to at least one building.
 
-You sign in with the Spaceti account you already have. There is no API key to request and no separate registration. If sign-in works but no tenants appear, the account is not entitled to Intelligence data or the integration is not enabled for your organisation; contact <mailto:support@spaceti.com>.
+You sign in with the Spaceti account you already have. There is no API key to request and no separate registration. If sign-in works but `get_info` with `type: "tenants"` returns an empty list, the account is not entitled to Intelligence data or the integration is not enabled for your organisation; contact <mailto:support@spaceti.com>.
 
 ## Tools
 
-All seven are read-only. The assistant cannot change anything in Spaceti.
+All seven are read-only and stateless. The assistant cannot change anything in Spaceti. Every tenant-scoped tool takes a `tenant` argument; nothing is selected or remembered between calls.
 
 | Tool | What it does |
 |---|---|
-| `select_tenant` | Selects the tenant used by tenant-scoped resources and tools. Returns that tenant's building catalog. |
+| `get_info` | Reference information. `type: "basic"` returns the interface documentation (measurements, units, aggregations, filters, time semantics, pagination). `type: "tenants"` lists the tenants your account can access. `type: "tenant"` with `tenant` returns that tenant's building catalog: buildings with `timeZone` and working hours, floors, space types, and the numeric IDs the other tools filter on. |
 | `get_spaces` | Finds spaces in one building by name query. Returns IDs to use as filters. |
 | `get_space_groups` | Finds space groups (departments) in one building by name query. Returns IDs to use as filters. |
-| `get_dataset` | Retrieves analytics dataset responses (scalar or timeseries) with measurement, date-range and element filters. Aggregated values: occupancy, utilization, people counts, environmental metrics, booking and insight counts. |
-| `get_insights` | Retrieves paginated raw insight events: unused ("ghost") bookings, occupied-but-unreserved spaces, stale air. Identified by space and time. |
-| `get_bookings` | Retrieves paginated raw booking records: booked space, start and end time, approval and check-in status, and an internal user identifier. |
-| `get_sensor_events` | Retrieves paginated raw sensor readings with UTC timestamps and measurement, device and location filters. |
-
-Tools other than `select_tenant` accept an optional `tenant` argument as a fallback when no tenant has been selected in the session.
-
-## Resources
-
-| URI | Contents |
-|---|---|
-| `spaceti://basic-info` | Describes this interface: available measurements, filters, terms, aggregations, the three record tools and the required call order. Read this first. |
-| `spaceti://tenants/{tenant}` | Buildings, floors and space types for one tenant. |
-| `spaceti://user-info` | Reserved. Returns no content in this version. |
+| `get_dataset` | Aggregated analytics (scalar or timeseries): occupancy, utilization, people counts, environmental metrics, booking and insight counts. Metrics are strings, `"metric"` or `"metric:aggregation"`, e.g. `["temp:avg,max", "co2", "booking_counts:value_count"]`. |
+| `get_insights` | Paginated raw insight events: unused ("ghost") bookings, occupied-but-unreserved spaces, stale air. Identified by space and time. |
+| `get_bookings` | Paginated raw booking records: booked space, start and end time, approval and check-in status, and, unless the organisation has opted out, the booker's or meeting organiser's name and email, the meeting title and online-meeting details. |
+| `get_sensor_events` | Paginated raw sensor readings with UTC timestamps and measurement, device and location filters. |
 
 ## What data is available
 
@@ -57,7 +47,7 @@ Always scoped to the buildings and tenants your Spaceti user is entitled to see:
 - Insight events: ghost bookings, unreserved occupancy, stale air
 - AV equipment utilization
 
-**About personal data.** Analytics, insight events and sensor readings are space-level and time-based. Booking records include an internal user identifier, which is personal data under GDPR. Where your organisation has enabled non-anonymised booking analytics, booking records also include the booker's name and email address and the meeting title. The integration exposes exactly what the same user can see in the Spaceti Dashboard, nothing more, and does not create or modify bookings. Details: [Privacy Policy, "AI Assistant Integrations"](https://spaceti.com/mobile/privacy-policy).
+**About personal data.** Analytics, insight events and sensor readings are space-level and time-based. Booking records identify the person who made the booking or organised the meeting (name and email address, which may belong to a calendar organiser who is not a Spaceti user), the meeting title and whether it was an online meeting, unless your organisation has opted out of identified booking analytics; opted-out organisations see an internal identifier only. The integration exposes exactly what the same user can see in the Spaceti Dashboard, nothing more, and does not create or modify bookings. Details: [Privacy Policy, "AI Assistant Integrations"](https://spaceti.com/mobile/privacy-policy).
 
 ## Example questions
 
@@ -69,13 +59,12 @@ Always scoped to the buildings and tenants your Spaceti user is entitled to see:
 
 ## How a session works
 
-1. **Read `spaceti://basic-info`.** It is the interface contract: measurements, filters, record tools and the required order of calls.
-2. **`select_tenant`** to pick the tenant. Everything after this is scoped to that selection.
-3. **`get_spaces` / `get_space_groups`** to turn names ("3rd floor", "Marketing") into the numeric IDs the other tools filter on.
-4. **`get_dataset`** for aggregated values: `type: 'scalar'` for a single value, `type: 'timeseries'` for histograms (`granularity` required). Metrics are passed as `"metric"` or `"metric:aggregation"`.
-5. **`get_insights`, `get_bookings`, `get_sensor_events`** only when individual records are needed. Results are paginated; continue with `pagination.next_cursor` and the same filters. `max_pages` (1–10) controls how many pages one call returns.
+1. **`get_info`** with `type: "tenants"` if the tenant is unknown, then `type: "tenant"` to get building, floor and space-type IDs. `type: "basic"` is the interface contract; read it once when unfamiliar.
+2. **`get_spaces` / `get_space_groups`** to turn names ("3rd floor", "Marketing") into the numeric IDs the other tools filter on.
+3. **`get_dataset`** for aggregated values: `type: 'scalar'` for a single value, `type: 'timeseries'` for histograms (`granularity` required).
+4. **`get_insights`, `get_bookings`, `get_sensor_events`** only when individual records are needed. Results are paginated; continue with `pagination.next_cursor` and the same filters. `max_pages` (1–10) controls how many pages one call returns.
 
-Dates are `YYYY-MM-DD`, daily time windows are `HH:mm` and default to the buildings' working hours, and `from` must not be later than `to`. Sensor events use UTC. Responses are size-capped; an oversized result comes back as an error explaining how to narrow the request.
+Time semantics: dates are `YYYY-MM-DD` in each building's local time; daily time windows are `HH:mm` and default to the buildings' working hours; `from` must not be later than `to`. Analytics results are already in building-local time and need no conversion, including across buildings in different time zones. `get_sensor_events` uses UTC. Responses are size-capped; an oversized result comes back as an error explaining how to narrow the request.
 
 ## Disconnecting
 
